@@ -17,19 +17,3 @@ output "cluster_name" {
   description = "Kubernetes Cluster Name"
   value       = module.eks.cluster_name
 }
-
-# output "AccessKey" {
-#   description = "AWS Access Key ID"
-#   value       = var.AccessKey
-#   sensitive   = true
-# }
-
-# output "SecretKey" {
-#   description = "AWS Secret Access Key"
-#   value       = var.SecretKey
-#   sensitive   = true
-# }
-
-output "eks_cluster_name" {
-  value = module.eks.cluster_name
-}

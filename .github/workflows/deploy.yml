@@ -1,0 +1,61 @@
+name: Deploy EKS and Pac-Man App
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    env:
+      AWS_REGION: us-west-2  # <-- update your region if needed
+      EKS_CLUSTER_NAME: pacman-cluster # <-- just placeholder, will fetch dynamically
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Install Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: 1.7.4
+
+    - name: Install AWS CLI and kubectl
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y awscli
+        curl -LO "https://dl.k8s.io/release/$(curl -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+        chmod +x kubectl
+        sudo mv kubectl /usr/local/bin/
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Deploy EKS Cluster with Terraform
+      working-directory: eks
+      run: |
+        terraform init
+        terraform validate
+        terraform apply -auto-approve
+
+    - name: Configure kubectl for EKS
+      working-directory: eks
+      run: |
+        aws eks --region $(terraform output -raw region) update-kubeconfig --name $(terraform output -raw cluster_name)
+
+    - name: Deploy Pac-Man App with Terraform
+      working-directory: pac-man
+      run: |
+        terraform init
+        terraform validate
+        terraform apply -auto-approve
+
+    - name: Verify Pac-Man App Deployment
+      run: |
+        kubectl -n pac-man get all
