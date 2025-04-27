@@ -34,11 +34,11 @@ jobs:
       - name: Verify Files in Directory
         run: ls -R ./terraform  # Check that the terraform directory contains the necessary files
 
-      - name: Terraform Init
+      - name: Terraform Init with Debugging
         run: |
           cd terraform
-          terraform init  # Initialize Terraform and download required modules
-
+          terraform init -input=false -upgrade -get-plugins=true  # Run init with extra flags to force download of modules
+          
       - name: Terraform Validate
         run: |
           cd terraform
