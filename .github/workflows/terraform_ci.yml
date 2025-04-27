@@ -16,15 +16,15 @@ jobs:
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v3  # Using the latest version of actions/checkout
+        uses: actions/checkout@v3
 
       - name: Set up Terraform
-        uses: hashicorp/setup-terraform@v2  # Using the latest stable version of setup-terraform
+        uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: '1.4.0'
 
       - name: Cache Terraform providers
-        uses: actions/cache@v2  # Ensure actions/cache is referenced correctly
+        uses: actions/cache@v4  # Updated to latest version
         with:
           path: ~/.terraform.d
           key: ${{ runner.os }}-terraform-${{ hashFiles('**/*.tf') }}
@@ -35,6 +35,4 @@ jobs:
         run: terraform init
 
       - name: Terraform Validate
-        run: terraform validate  # Make sure this step is complete
-
-      # Add other Terraform steps like plan or apply if needed
+        run: terraform validate
