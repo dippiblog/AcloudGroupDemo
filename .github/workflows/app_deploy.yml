@@ -6,6 +6,7 @@ on:
     workflows: ["Terraform Deploy"]
     types:
       - completed
+    status: success
 
 jobs:
   deploy-demo-app:
