@@ -7,56 +7,84 @@ on:
   workflow_dispatch:
 
 jobs:
-  deploy:
+  setup:
     runs-on: ubuntu-latest
 
-    env:
-      AWS_REGION: us-west-2
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.7.4
+
+      - name: Check AWS CLI and Install kubectl
+        run: |
+          aws --version  # Check pre-installed AWS CLI
+          # Install kubectl with fixed version
+          curl -LO "https://dl.k8s.io/release/v1.29.0/bin/linux/amd64/kubectl"
+          chmod +x kubectl
+          sudo mv kubectl /usr/local/bin/
+          kubectl version --client
+
+  terraform_deploy_eks:
+    runs-on: ubuntu-latest
+    needs: setup
+    # environment: production
 
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v4
+      - name: Initialize Terraform
+        run: |
+          cd eks
+          terraform init
 
-    - name: Install Terraform
-      uses: hashicorp/setup-terraform@v3
-      with:
-        terraform_version: 1.7.4
+      - name: Validate Terraform Configuration
+        run: |
+          cd eks
+          terraform validate
 
-    - name: Check AWS CLI and Install kubectl
-      run: |
-        aws --version  # Check pre-installed AWS CLI
-        # Install kubectl with fixed version
-        curl -LO "https://dl.k8s.io/release/v1.29.0/bin/linux/amd64/kubectl"
-        chmod +x kubectl
-        sudo mv kubectl /usr/local/bin/
-        kubectl version --client
+      - name: Plan Terraform Deployment
+        run: |
+          cd eks
+          terraform plan
 
-    - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v2
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{ env.AWS_REGION }}
+      - name: Deploy EKS Cluster with Terraform
+        run: |
+          cd eks
+          terraform apply -auto-approve
 
-    - name: Deploy EKS Cluster with Terraform
-      working-directory: eks
-      run: |
-        terraform init
-        terraform validate
-        terraform apply -auto-approve
+      - name: Configure kubectl for EKS
+        run: |
+          cd eks
+          aws eks --region $(terraform output -raw region) update-kubeconfig --name $(terraform output -raw cluster_name)
 
-    - name: Configure kubectl for EKS
-      working-directory: eks
-      run: |
-        aws eks --region $(terraform output -raw region) update-kubeconfig --name $(terraform output -raw cluster_name)
+  deploy_pacman_app:
+    runs-on: ubuntu-latest
+    needs: terraform_deploy_eks
+  #  environment: production
 
-    - name: Deploy Pac-Man App with Terraform
-      working-directory: pac-man
-      run: |
-        terraform init
-        terraform validate
-        terraform apply -auto-approve
+    steps:
+      - name: Initialize Terraform for Pac-Man
+        run: |
+          cd pac-man
+          terraform init
 
-    - name: Verify Pac-Man App Deployment
-      run: |
-        kubectl -n pac-man get all
+      - name: Validate Pac-Man Terraform Configuration
+        run: |
+          cd pac-man
+          terraform validate
+
+      - name: Plan Pac-Man Deployment
+        run: |
+          cd pac-man
+          terraform plan
+
+      - name: Deploy Pac-Man App with Terraform
+        run: |
+          cd pac-man
+          terraform apply -auto-approve
+
+      - name: Verify Pac-Man App Deployment
+        run: |
+          kubectl -n pac-man get all
