@@ -29,3 +29,7 @@ output "cluster_name" {
 #   value       = var.SecretKey
 #   sensitive   = true
 # }
+
+output "eks_cluster_name" {
+  value = module.eks.cluster_name
+}
