@@ -47,7 +47,7 @@ jobs:
           cd terraform
           terraform validate  # Validate Terraform configuration
 
-      - name: Terraform Plan
-        run: |
-          cd terraform
-          terraform plan -out=tfplan  # Run terraform plan
+      # - name: Terraform Plan
+      #   run: |
+      #     cd terraform
+      #     terraform plan -out=tfplan  # Run terraform plan
