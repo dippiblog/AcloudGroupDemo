@@ -11,36 +11,24 @@ on:
       - develop
 
 jobs:
-  terraform_init:
-    name: Initialize Terraform
+  terraform-ci:
+    name: 'Terraform CI Check'
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0  # Ensures the entire repo is fetched
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Set up Terraform
-        uses: hashicorp/setup-terraform@v2
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: '1.7.5'
+          terraform_version: latest
 
-      - name: Cache Terraform providers
-        uses: actions/cache@v4
-        with:
-          path: ~/.terraform.d
-          key: ${{ runner.os }}-terraform-${{ hashFiles('**/*.tf') }}
-          restore-keys: |
-            ${{ runner.os }}-terraform-
-
-      - name: Verify Files in Directory
-        run: ls -R ./terraform  # Ensure the terraform directory contains configuration files
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive
 
       - name: Terraform Init
-        run: |
-          cd terraform
-          terraform init  # Initialize Terraform modules and providers
+        run: terraform init
 
-      - name: Verify Module Installation
-        run: ls -R ./terraform/.terraform  # Verify that modules are downloaded
+      - name: Terraform Validate
+        run: terraform validate
