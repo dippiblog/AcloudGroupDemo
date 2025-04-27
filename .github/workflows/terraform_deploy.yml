@@ -15,6 +15,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Check Git Version
+        run: git --version
+
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v3
         with:
@@ -27,19 +30,14 @@ jobs:
         with:
           terraform_version: latest
 
-      - name: Cache Terraform modules
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.terraform.d/plugin-cache
-            terraform/.terraform
-          key: ${{ runner.os }}-terraform-${{ hashFiles('**/*.tf') }}
+      - name: Clean Terraform Cache
+        run: |
+          rm -rf terraform/.terraform
+          rm -f terraform/.terraform.lock.hcl
 
       - name: Terraform Init
         run: terraform init -input=false
         working-directory: terraform
-        env:
-          TF_PLUGIN_CACHE_DIR: ~/.terraform.d/plugin-cache
 
       - name: Terraform Apply
         run: terraform apply -auto-approve
@@ -48,4 +46,3 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
-          TF_PLUGIN_CACHE_DIR: ~/.terraform.d/plugin-cache
