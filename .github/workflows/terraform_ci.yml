@@ -31,8 +31,15 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-terraform-
 
+      - name: Verify Files in Directory
+        run: ls -R ./terraform  # Check that the terraform directory contains the necessary files
+
       - name: Terraform Init
-        run: terraform init
+        run: |
+          cd terraform
+          terraform init  # Initialize Terraform and download required modules
 
       - name: Terraform Validate
-        run: terraform validate
+        run: |
+          cd terraform
+          terraform validate  # Validate Terraform configuration
