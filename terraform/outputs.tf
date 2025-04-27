@@ -18,14 +18,14 @@ output "cluster_name" {
   value       = module.eks.cluster_name
 }
 
-output "AccessKey" {
-  description = "AWS Access Key ID"
-  value       = var.AccessKey
-  sensitive   = true
-}
+# output "AccessKey" {
+#   description = "AWS Access Key ID"
+#   value       = var.AccessKey
+#   sensitive   = true
+# }
 
-output "SecretKey" {
-  description = "AWS Secret Access Key"
-  value       = var.SecretKey
-  sensitive   = true
-}
+# output "SecretKey" {
+#   description = "AWS Secret Access Key"
+#   value       = var.SecretKey
+#   sensitive   = true
+# }
