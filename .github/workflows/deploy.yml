@@ -36,6 +36,14 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      - name: Install Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.7.4
+
+      - name: Verify Terraform Installation
+        run: terraform --version
+
       - name: Initialize Terraform
         run: |
           cd eks
@@ -76,6 +84,14 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
+
+      - name: Install Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.7.4
+
+      - name: Verify Terraform Installation
+        run: terraform --version
 
       - name: Initialize Terraform for Pac-Man
         run: |
