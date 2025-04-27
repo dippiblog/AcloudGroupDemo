@@ -7,95 +7,90 @@ on:
   workflow_dispatch:
 
 jobs:
-  terraform_init:
+  terraform:
     runs-on: ubuntu-latest
+
+    env:
+      AWS_REGION: us-west-2
+      S3_BUCKET: 948048451133terraform-state-bucket  # Replace with your bucket name
+      DYNAMODB_TABLE: terraform-state-lock  # DynamoDB table for state locking
+      STATE_KEY: eks/terraform.tfstate  # Path to state file in S3
+
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-    - name: Install Terraform
-      uses: hashicorp/setup-terraform@v3
-      with:
-        terraform_version: 1.7.4
+      # Debugging step to list directory contents
+      - name: List directory contents for debugging
+        run: |
+          ls -alh  # List all files in the repository
+          ls -alh eks  # List files in 'eks' directory (should exist)
 
-    - name: Install kubectl
-      run: |
-        curl -LO "https://dl.k8s.io/release/v1.29.0/bin/linux/amd64/kubectl"
-        chmod +x kubectl
-        sudo mv kubectl /usr/local/bin/
-        kubectl version --client
+      - name: Install Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.7.4
 
-    - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v2
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{ secrets.AWS_REGION }}
+      - name: Check AWS CLI and Install kubectl
+        run: |
+          aws --version  # Check pre-installed AWS CLI
+          curl -LO "https://dl.k8s.io/release/v1.29.0/bin/linux/amd64/kubectl"
+          chmod +x kubectl
+          sudo mv kubectl /usr/local/bin/
+          kubectl version --client
 
-    - name: Terraform Init (EKS)
-      working-directory: eks
-      run: |
-        terraform init -backend-config="bucket=948048451133terraform-state-bucket" \
-                        -backend-config="key=eks/terraform.tfstate" \
-                        -backend-config="region=${{ secrets.AWS_REGION }}" \
-                        -backend-config="dynamodb_table=terraform-state-lock" \
-                        -backend-config="encrypt=true"
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
 
-    - name: Terraform Init (Pac-Man)
-      working-directory: pac-man
-      run: |
-        terraform init -backend-config="bucket=948048451133terraform-state-bucket" \
-                        -backend-config="key=pac-man/terraform.tfstate" \
-                        -backend-config="region=${{ secrets.AWS_REGION }}" \
-                        -backend-config="dynamodb_table=terraform-state-lock" \
-                        -backend-config="encrypt=true"
+      # Set up Terraform with remote S3 backend for state management
+      - name: Terraform Init with S3 Backend
+        working-directory: eks  # Ensure path is correct
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ env.S3_BUCKET }}" \
+            -backend-config="key=${{ env.STATE_KEY }}" \
+            -backend-config="region=${{ env.AWS_REGION }}" \
+            -backend-config="encrypt=true" \
+            -backend-config="dynamodb_table=${{ env.DYNAMODB_TABLE }}" \
+            -backend-config="acl=bucket-owner-full-control"
 
-  terraform_validate:
+      - name: Terraform Validate, Plan, and Apply for EKS
+        working-directory: eks  # Ensure path is correct
+        run: |
+          terraform validate
+          terraform plan -out=tfplan
+          terraform apply -auto-approve tfplan
+
+      - name: Configure kubectl for EKS
+        working-directory: eks  # Ensure path is correct
+        run: |
+          aws eks --region $(terraform output -raw region) update-kubeconfig --name $(terraform output -raw cluster_name)
+
+  deploy_app:
     runs-on: ubuntu-latest
-    needs: terraform_init
- 
+    needs: terraform
+
     steps:
-    - name: Terraform Validate (EKS)
-      working-directory: eks
-      run: terraform validate
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-    - name: Terraform Validate (Pac-Man)
-      working-directory: pac-man
-      run: terraform validate
+      - name: Deploy Pac-Man App with Terraform
+        working-directory: pac-man  # Update path if necessary
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ env.S3_BUCKET }}" \
+            -backend-config="key=${{ env.STATE_KEY }}" \
+            -backend-config="region=${{ env.AWS_REGION }}" \
+            -backend-config="encrypt=true" \
+            -backend-config="dynamodb_table=${{ env.DYNAMODB_TABLE }}" \
+            -backend-config="acl=bucket-owner-full-control"
+          terraform validate
+          terraform apply -auto-approve
 
-  terraform_plan:
-    runs-on: ubuntu-latest
-    needs: terraform_validate
-    steps:
-    - name: Terraform Plan (EKS)
-      working-directory: eks
-      run: terraform plan
-
-    - name: Terraform Plan (Pac-Man)
-      working-directory: pac-man
-      run: terraform plan
-
-  terraform_apply:
-    runs-on: ubuntu-latest
-    needs: terraform_plan
-    steps:
-    - name: Terraform Apply (EKS)
-      working-directory: eks
-      run: terraform apply -auto-approve
-
-    - name: Configure kubectl for EKS
-      working-directory: eks
-      run: |
-        aws eks --region $(terraform output -raw region) update-kubeconfig --name $(terraform output -raw cluster_name)
-
-  deploy_application:
-    runs-on: ubuntu-latest
-    needs: terraform_apply
-    steps:
-    - name: Terraform Apply (Pac-Man)
-      working-directory: pac-man
-      run: terraform apply -auto-approve
-
-    - name: Verify Pac-Man App Deployment
-      run: |
-        kubectl -n pac-man get all
+      - name: Verify Pac-Man App Deployment
+        run: |
+          kubectl -n pac-man get all
