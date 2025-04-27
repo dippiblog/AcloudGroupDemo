@@ -13,12 +13,13 @@ jobs:
   terraform_init:
     name: Initialize Terraform
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3  # Use the latest version (v3)
 
       - name: Set up Terraform
-        uses: hashicorp/setup-terraform@v1
+        uses: hashicorp/setup-terraform@v2  # Use the latest stable version of setup-terraform
         with:
           terraform_version: '1.4.0'
 
@@ -26,7 +27,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ~/.terraform.d
-          key: ${{ runner.os }}-terraform-${{ hashFiles('**/*.tf') }}
+          key: ${{ runner.os }}-terraform-${{ hashFiles('**/*.tf') }}-${{ runner.os }}
           restore-keys: |
             ${{ runner.os }}-terraform-
 
@@ -34,4 +35,5 @@ jobs:
         run: terraform init
 
       - name: Terraform Validate
-        run: terraform validate
+        run: terraform validate  # Ensure this step has a valid and complete command
+
