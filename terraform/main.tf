@@ -7,7 +7,7 @@ provider "kubernetes" {
 provider "aws" {
   access_key = var.AccessKey
   secret_key = var.SecretKey
-  region = var.region
+  region     = var.region
 }
 
 data "aws_availability_zones" "available" {}
