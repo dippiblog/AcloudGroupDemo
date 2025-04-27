@@ -37,8 +37,8 @@ jobs:
       - name: Terraform Init
         run: |
           cd terraform
-          terraform init -input=false -upgrade -get-plugins=true  # Run init with extra flags to force download of modules
-          
+          terraform init  # Start with a simple terraform init to verify it works
+
       - name: Verify .terraform directory
         run: ls -R ./terraform/.terraform  # Verify that modules are downloaded and present
 
