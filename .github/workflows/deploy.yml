@@ -51,7 +51,7 @@ jobs:
       - name: Verify AWS CLI
         run: aws sts get-caller-identity
 
-      - name: Initialize Terraform
+      - name: Initialize Terraform for EKS
         run: |
           cd eks
           terraform init \
@@ -60,16 +60,10 @@ jobs:
             -backend-config="region=us-east-1"
         shell: bash
 
-      - name: Validate Terraform Configuration
+      - name: Validate Terraform Configuration for EKS
         run: |
           cd eks
           terraform validate
-        shell: bash
-
-      - name: Plan Terraform Deployment
-        run: |
-          cd eks
-          terraform plan
         shell: bash
 
       - name: Deploy EKS Cluster with Terraform
@@ -116,16 +110,10 @@ jobs:
             -backend-config="region=us-east-1"
         shell: bash
 
-      - name: Validate Pac-Man Terraform Configuration
+      - name: Validate Terraform Configuration for Pac-Man
         run: |
           cd pac-man
           terraform validate
-        shell: bash
-
-      - name: Plan Pac-Man Deployment
-        run: |
-          cd pac-man
-          terraform plan
         shell: bash
 
       - name: Deploy Pac-Man App with Terraform
