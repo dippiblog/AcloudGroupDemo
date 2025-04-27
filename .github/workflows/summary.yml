@@ -1,0 +1,57 @@
+name: Workflow Summary
+
+on:
+  workflow_run:
+    workflows: 
+      - "Terraform Init"
+      - "Terraform Plan"
+      - "Terraform Deploy"
+      - "Deploy Demo App"
+    types:
+      - completed
+
+jobs:
+  summary:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get Workflow Statuses
+        run: |
+          echo "Fetching workflow status summary..."
+
+          # Fetch the status of the 'Terraform CI' workflow run
+          terraform_ci_status=$(curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/repos/${{ github.repository }}/actions/runs | jq '.workflow_runs[] | select(.name=="Terraform CI") | .conclusion')
+          
+          # Fetch the status of the 'Terraform Plan' workflow run
+          terraform_plan_status=$(curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/repos/${{ github.repository }}/actions/runs | jq '.workflow_runs[] | select(.name=="Terraform Plan") | .conclusion')
+
+          # Fetch the status of the 'Terraform Deploy' workflow run
+          terraform_deploy_status=$(curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/repos/${{ github.repository }}/actions/runs | jq '.workflow_runs[] | select(.name=="Terraform Deploy") | .conclusion')
+
+          # Fetch the status of the 'App Deploy' workflow run
+          app_deploy_status=$(curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/repos/${{ github.repository }}/actions/runs | jq '.workflow_runs[] | select(.name=="App Deploy") | .conclusion')
+
+          # Output the results
+          echo "Terraform CI Status: $terraform_ci_status"
+          echo "Terraform Plan Status: $terraform_plan_status"
+          echo "Terraform Deploy Status: $terraform_deploy_status"
+          echo "App Deploy Status: $app_deploy_status"
+
+          # Display status summary in GitHub Actions logs
+          echo "terraform_ci_status=${terraform_ci_status}" >> $GITHUB_ENV
+          echo "terraform_plan_status=$terraform_plan_status" >> $GITHUB_ENV
+          echo "terraform_deploy_status=$terraform_deploy_status" >> $GITHUB_ENV
+          echo "app_deploy_status=$app_deploy_status" >> $GITHUB_ENV
+          
+          echo "Workflow summary completed!"
+        
+      - name: Display Workflow Summary in Actions Logs
+        run: |
+          echo "Summary of all workflows:"
+          echo "Terraform CI Status: ${terraform_ci_status}"
+          echo "Terraform Plan Status: ${terraform_plan_status}"
+          echo "Terraform Deploy Status: ${terraform_deploy_status}"
+          echo "App Deploy Status: $app_deploy_status"
