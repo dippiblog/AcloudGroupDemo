@@ -7,12 +7,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  deploy:
+  terraform_init:
     runs-on: ubuntu-latest
-
-    env:
-      AWS_REGION: us-west-2
-
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v4
@@ -22,10 +18,8 @@ jobs:
       with:
         terraform_version: 1.7.4
 
-    - name: Check AWS CLI and Install kubectl
+    - name: Install kubectl
       run: |
-        aws --version  # Check pre-installed AWS CLI
-        # Install kubectl with fixed version
         curl -LO "https://dl.k8s.io/release/v1.29.0/bin/linux/amd64/kubectl"
         chmod +x kubectl
         sudo mv kubectl /usr/local/bin/
@@ -36,26 +30,71 @@ jobs:
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{ env.AWS_REGION }}
+        aws-region: ${{ secrets.AWS_REGION }}
 
-    - name: Deploy EKS Cluster with Terraform
+    - name: Terraform Init (EKS)
       working-directory: eks
       run: |
-        terraform init
-        terraform validate
-        terraform apply -auto-approve
+        terraform init -backend-config="bucket=948048451133terraform-state-bucket" \
+                        -backend-config="key=eks/terraform.tfstate" \
+                        -backend-config="region=${{ secrets.AWS_REGION }}" \
+                        -backend-config="dynamodb_table=terraform-state-lock" \
+                        -backend-config="encrypt=true"
+
+    - name: Terraform Init (Pac-Man)
+      working-directory: pac-man
+      run: |
+        terraform init -backend-config="bucket=948048451133terraform-state-bucket" \
+                        -backend-config="key=pac-man/terraform.tfstate" \
+                        -backend-config="region=${{ secrets.AWS_REGION }}" \
+                        -backend-config="dynamodb_table=terraform-state-lock" \
+                        -backend-config="encrypt=true"
+
+  terraform_validate:
+    runs-on: ubuntu-latest
+    needs: terraform_init
+ 
+    steps:
+    - name: Terraform Validate (EKS)
+      working-directory: eks
+      run: terraform validate
+
+    - name: Terraform Validate (Pac-Man)
+      working-directory: pac-man
+      run: terraform validate
+
+  terraform_plan:
+    runs-on: ubuntu-latest
+    needs: terraform_validate
+    steps:
+    - name: Terraform Plan (EKS)
+      working-directory: eks
+      run: terraform plan
+
+    - name: Terraform Plan (Pac-Man)
+      working-directory: pac-man
+      run: terraform plan
+
+  terraform_apply:
+    runs-on: ubuntu-latest
+    needs: terraform_plan
+    steps:
+    - name: Terraform Apply (EKS)
+      working-directory: eks
+      run: terraform apply -auto-approve
 
     - name: Configure kubectl for EKS
       working-directory: eks
       run: |
         aws eks --region $(terraform output -raw region) update-kubeconfig --name $(terraform output -raw cluster_name)
 
-    - name: Deploy Pac-Man App with Terraform
+  deploy_application:
+    runs-on: ubuntu-latest
+    needs: terraform_apply
+    steps:
+    - name: Terraform Apply (Pac-Man)
       working-directory: pac-man
-      run: |
-        terraform init
-        terraform validate
-        terraform apply -auto-approve
+      run: terraform apply -auto-approve
 
     - name: Verify Pac-Man App Deployment
       run: |
