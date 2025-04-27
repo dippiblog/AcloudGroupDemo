@@ -36,7 +36,7 @@ module "eks" {
 # Backend Configuration for Remote State Storage in S3 with DynamoDB for State Locking
 terraform {
   backend "s3" {
-    bucket         = "948048451133terraform-state-bucket"   # Replace with your actual S3 bucket name
+    bucket         = "248189903023terraform-state-bucket"   # Replace with your actual S3 bucket name
     key            = "eks/terraform.tfstate"       # Path to store the state file in the bucket
     region         = "us-west-2"                   # Ensure this matches your AWS region
     encrypt        = true                          # Enable encryption for state file storage
