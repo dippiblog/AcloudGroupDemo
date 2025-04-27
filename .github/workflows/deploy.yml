@@ -55,7 +55,7 @@ jobs:
         run: |
           cd eks
           terraform init \
-            -backend-config="bucket=248189903023terraform-state-bucket" \
+            -backend-config="bucket=248189903023-terraform-state-bucket" \
             -backend-config="key=eks/terraform.tfstate" \
             -backend-config="region=us-east-1"
         shell: bash
@@ -111,7 +111,7 @@ jobs:
         run: |
           cd pac-man
           terraform init \
-            -backend-config="bucket=248189903023terraform-state-bucket" \
+            -backend-config="bucket=248189903023-terraform-state-bucket" \
             -backend-config="key=pac-man/terraform.tfstate" \
             -backend-config="region=us-east-1"
         shell: bash
