@@ -19,16 +19,18 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: List files (optional, for debugging)
+        run: ls -R  # To confirm that .tf files exist
+
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: latest
 
-      - name: Terraform Format Check (Auto Fix)
-        run: terraform fmt -recursive
-
       - name: Terraform Init
         run: terraform init
+        working-directory: ./terraform  # Ensure this is set to the directory with .tf files
 
-      - name: Terraform Validate
-        run: terraform validate
+      - name: Terraform Plan
+        run: terraform plan
+        working-directory: ./terraform  # Ensure this is set to the directory with .tf files
