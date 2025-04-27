@@ -14,6 +14,11 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # Ensures all files are fetched
+
+      - name: Verify Files in Directory
+        run: ls -R ./terraform  # Check the contents of the terraform directory for debugging
 
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v2
@@ -28,13 +33,13 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Terraform Init
-        run: terraform init -chdir=terraform  # Navigate to the terraform directory
+        run: terraform init -chdir=terraform  # Initialize Terraform in the correct directory
 
       - name: Terraform Plan
-        run: terraform plan -out=tfplan -chdir=terraform
+        run: terraform plan -out=tfplan -chdir=terraform  # Generate plan output
 
       - name: Upload Terraform Plan as Artifact
         uses: actions/upload-artifact@v4
         with:
           name: tfplan
-          path: terraform/tfplan  # Ensure the path is correct
+          path: terraform/tfplan
