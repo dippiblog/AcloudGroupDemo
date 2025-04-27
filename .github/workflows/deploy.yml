@@ -43,26 +43,31 @@ jobs:
             -backend-config="bucket=948048451133terraform-state-bucket" \
             -backend-config="key=eks/terraform.tfstate" \
             -backend-config="region=us-east-1"
+        shell: bash
 
       - name: Validate Terraform Configuration
         run: |
           cd eks
           terraform validate
+        shell: bash
 
       - name: Plan Terraform Deployment
         run: |
           cd eks
           terraform plan
+        shell: bash
 
       - name: Deploy EKS Cluster with Terraform
         run: |
           cd eks
           terraform apply -auto-approve
+        shell: bash
 
       - name: Configure kubectl for EKS
         run: |
           cd eks
           aws eks --region $(terraform output -raw region) update-kubeconfig --name $(terraform output -raw cluster_name)
+        shell: bash
 
   deploy_pacman_app:
     runs-on: ubuntu-latest
@@ -79,22 +84,27 @@ jobs:
             -backend-config="bucket=948048451133terraform-state-bucket" \
             -backend-config="key=pac-man/terraform.tfstate" \
             -backend-config="region=us-east-1"
+        shell: bash
 
       - name: Validate Pac-Man Terraform Configuration
         run: |
           cd pac-man
           terraform validate
+        shell: bash
 
       - name: Plan Pac-Man Deployment
         run: |
           cd pac-man
           terraform plan
+        shell: bash
 
       - name: Deploy Pac-Man App with Terraform
         run: |
           cd pac-man
           terraform apply -auto-approve
+        shell: bash
 
       - name: Verify Pac-Man App Deployment
         run: |
           kubectl -n pac-man get all
+        shell: bash
