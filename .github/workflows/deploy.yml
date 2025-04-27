@@ -22,7 +22,6 @@ jobs:
       - name: Check AWS CLI and Install kubectl
         run: |
           aws --version  # Verify AWS CLI
-          # Install kubectl
           curl -LO "https://dl.k8s.io/release/v1.29.0/bin/linux/amd64/kubectl"
           chmod +x kubectl
           sudo mv kubectl /usr/local/bin/
@@ -60,10 +59,16 @@ jobs:
             -backend-config="region=us-east-1"
         shell: bash
 
-      - name: Validate Terraform Configuration for EKS
+      - name: Validate Terraform Configuration
         run: |
           cd eks
           terraform validate
+        shell: bash
+
+      - name: Plan Terraform Deployment
+        run: |
+          cd eks
+          terraform plan
         shell: bash
 
       - name: Deploy EKS Cluster with Terraform
@@ -74,8 +79,10 @@ jobs:
 
       - name: Configure kubectl for EKS
         run: |
-          cd eks
-          aws eks --region $(terraform output -raw region) update-kubeconfig --name $(terraform output -raw cluster_name)
+          EKS_CLUSTER_NAME=$(terraform output -raw cluster_name)
+          EKS_REGION=$(terraform output -raw region)
+          aws eks --region ${EKS_REGION} update-kubeconfig --name ${EKS_CLUSTER_NAME}
+          kubectl get nodes
         shell: bash
 
   deploy_pacman_app:
@@ -110,10 +117,16 @@ jobs:
             -backend-config="region=us-east-1"
         shell: bash
 
-      - name: Validate Terraform Configuration for Pac-Man
+      - name: Validate Pac-Man Terraform Configuration
         run: |
           cd pac-man
           terraform validate
+        shell: bash
+
+      - name: Plan Pac-Man Deployment
+        run: |
+          cd pac-man
+          terraform plan
         shell: bash
 
       - name: Deploy Pac-Man App with Terraform
