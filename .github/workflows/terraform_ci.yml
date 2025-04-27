@@ -29,7 +29,7 @@ jobs:
 
       - name: Terraform Init
         run: terraform init
-        working-directory: ./terraform  # Ensure this is set to the directory with .tf files
+        working-directory: terraform  # Ensure this is set to the directory with .tf files
 
       # - name: Terraform Plan
       #   run: terraform plan
