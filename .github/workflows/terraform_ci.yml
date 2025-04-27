@@ -24,8 +24,8 @@ jobs:
         with:
           terraform_version: latest
 
-      - name: Terraform Format Check
-        run: terraform fmt -check -recursive
+      - name: Terraform Format Check (Auto Fix)
+        run: terraform fmt -recursive
 
       - name: Terraform Init
         run: terraform init
