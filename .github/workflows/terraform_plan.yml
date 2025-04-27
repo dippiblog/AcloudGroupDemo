@@ -23,7 +23,7 @@ jobs:
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v2
         with:
-          terraform_version: '1.7.5'  # Update to the version you're using
+          terraform_version: '1.7.5'  # Ensure the correct version is being used
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
@@ -33,14 +33,19 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Terraform Validate
-        run: terraform validate -chdir=terraform  # Validate Terraform configuration
+        run: |
+          cd terraform
+          terraform validate  # Validate Terraform configuration
 
       - name: Terraform Init (with Debugging)
         run: |
-          TF_LOG=DEBUG terraform init -chdir=terraform  # Initialize Terraform with detailed logs
+          cd terraform
+          TF_LOG=DEBUG terraform init  # Initialize Terraform with detailed logs
 
       - name: Terraform Plan
-        run: terraform plan -out=tfplan -chdir=terraform  # Generate plan output
+        run: |
+          cd terraform
+          terraform plan -out=tfplan  # Generate plan output
 
       - name: Upload Terraform Plan as Artifact
         uses: actions/upload-artifact@v4
